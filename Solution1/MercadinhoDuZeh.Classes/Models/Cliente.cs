@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MercadinhoDuZeh.Classes.Models
 {
-    internal class Cliente
+    public class Cliente
     {
         [Required, StringLength(10)]
         public string id { get; set; }

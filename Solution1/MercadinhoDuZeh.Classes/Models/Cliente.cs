@@ -17,14 +17,14 @@ namespace MercadinhoDuZeh.Classes.Models
 
         private string _cpf = string.Empty;
 
-        private string cpf
+        public string cpf
         {
             get => _cpf;
             set => _cpf = value.Replace(".", "").Replace("-", "");
         }
 
         [EmailAddress]
-        private string email { get; set; }
+        public string email { get; set; }
 
         public DateTime DataNascimento { get; set; }
 

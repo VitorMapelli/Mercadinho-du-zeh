@@ -7,11 +7,11 @@ namespace MercadinhoDuZeh.Classes.Models
 {
     public class Cliente
     {
-        [Required, StringLength(10)]
-        public string id { get; set; }
+        [Required, MaxLength(50)]
+        public int id { get; set; }
 
         [Required]
-        [StringLength(80, MinimumLength = 6)]
+        [StringLength(50, MinimumLength = 6)]
         [RegularExpression("^[a-zA-Z ]+$")]
         public string nome { get; set; }
 

@@ -7,11 +7,11 @@ namespace MercadinhoDuZeh.Classes.Models
 {
     public class Dividas
     {
-        [Required, StringLength(10)]
-        public string Id { get; set; }
+        [Required]
+        public int Id { get; set; }
 
-        [Required, StringLength(10)]
-        public string ClienteId { get; set; }
+        [Required]
+        public int ClienteId { get; set; }
 
         public decimal Valor { get; set; }
 

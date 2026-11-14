@@ -7,7 +7,7 @@ namespace MercadinhoDuZeh.Classes.Models
 {
     public class Cliente
     {
-        [Required, MaxLength(50)]
+        [Required]
         public int id { get; set; }
 
         [Required]

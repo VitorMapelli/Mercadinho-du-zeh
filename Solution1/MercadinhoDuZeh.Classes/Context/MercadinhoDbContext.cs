@@ -30,8 +30,7 @@ namespace MercadinhoDuZeh.Classes.Context
             entityCliente.Property(c => c.nome).HasColumnName("nome");
             entityCliente.Property(c => c.cpf).HasColumnName("cpf");
             entityCliente.Property(c => c.email).HasColumnName("email");
-            entityCliente.Property(c => c.DataNascimento)
-                .HasColumnName("data_nascimento");
+            entityCliente.Property(c => c.DataNascimento).HasColumnName("data_nascimento").HasColumnType("date");
 
             var entityDivida = modelBuilder.Entity<Dividas>();
 

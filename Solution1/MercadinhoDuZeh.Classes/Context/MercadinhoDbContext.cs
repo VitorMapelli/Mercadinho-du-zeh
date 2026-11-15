@@ -40,8 +40,8 @@ namespace MercadinhoDuZeh.Classes.Context
             entityDivida.Property(d => d.ClienteId).HasColumnName("cliente_id");
             entityDivida.Property(d => d.Valor).HasColumnName("valor");
             entityDivida.Property(d => d.Paga).HasColumnName("paga");
-            entityDivida.Property(d => d.DataCriacao).HasColumnName("data_criacao");
-            entityDivida.Property(d => d.DataPagamento).HasColumnName("data_pagamento");
+            entityDivida.Property(d => d.DataCriacao).HasColumnName("data_criacao").HasColumnType("timestamp without time zone");
+            entityDivida.Property(d => d.DataPagamento).HasColumnName("data_pagamento").HasColumnType("timestamp without time zone");
 
             base.OnModelCreating(modelBuilder);
         }

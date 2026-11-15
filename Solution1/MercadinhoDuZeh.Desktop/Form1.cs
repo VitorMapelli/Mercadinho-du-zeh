@@ -85,6 +85,7 @@ namespace MercadinhoDuZeh.Desktop
 
             btnEditar.Click += (s, e) => EditarCliente();
             btnExcluir.Click += (s, e) => ExcluirCliente();
+            btnDividas.Click += (s, e) => AbrirDividas();
 
             gridClientes.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             gridClientes.MultiSelect = false;
@@ -226,6 +227,31 @@ namespace MercadinhoDuZeh.Desktop
                     $"Não foi possível excluir. O cliente pode ter dívidas vinculadas.\n\n" +
                     ex.GetBaseException().Message);
             }
+        }
+
+        private void AbrirDividas()
+        {
+            var id = ObterIdSelecionado();
+
+            if (id == null)
+            {
+                return;
+            }
+
+            var cliente = clienteService
+                .Consultar()
+                .FirstOrDefault(c => c.id == id.Value);
+
+            if (cliente == null)
+            {
+                MessageBox.Show("Cliente não encontrado.");
+                return;
+            }
+
+            using var formulario = new DividasForm(dividasService, cliente);
+            formulario.ShowDialog(this);
+
+            CarregarClientes(txtBusca.Text);
         }
     }
 }

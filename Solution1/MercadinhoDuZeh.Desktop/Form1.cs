@@ -73,6 +73,16 @@ namespace MercadinhoDuZeh.Desktop
                 Size = new Size(80, 28)
             };
 
+            btnNovo.Click += (s, e) =>
+            {
+                using var formulario = new ClienteForm(clienteService);
+
+                if (formulario.ShowDialog(this) == DialogResult.OK)
+                {
+                    CarregarClientes(txtBusca.Text);
+                }
+            };
+
             gridClientes.Location = new Point(20, 100);
             gridClientes.Size = new Size(860, 370);
             gridClientes.Anchor = AnchorStyles.Top | AnchorStyles.Bottom |

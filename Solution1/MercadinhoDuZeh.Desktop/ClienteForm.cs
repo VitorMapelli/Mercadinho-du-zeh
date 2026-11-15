@@ -1,6 +1,7 @@
 ﻿using MercadinhoDuZeh.Classes.Models;
 using MercadinhoDuZeh.Classes.Services;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 using System.Linq;
@@ -35,8 +36,10 @@ namespace MercadinhoDuZeh.Desktop
                 Location = new Point(20, 25),
                 AutoSize = true
             });
+
             txtNome.Location = new Point(140, 22);
             txtNome.Width = 220;
+            txtNome.MaxLength = 50;
 
             Controls.Add(new Label
             {
@@ -44,8 +47,10 @@ namespace MercadinhoDuZeh.Desktop
                 Location = new Point(20, 65),
                 AutoSize = true
             });
+
             txtCpf.Location = new Point(140, 62);
             txtCpf.Width = 220;
+            txtCpf.MaxLength = 14;
 
             Controls.Add(new Label
             {
@@ -53,10 +58,12 @@ namespace MercadinhoDuZeh.Desktop
                 Location = new Point(20, 105),
                 AutoSize = true
             });
+
             dtpNascimento.Location = new Point(140, 102);
             dtpNascimento.Width = 220;
             dtpNascimento.MaxDate = DateTime.Today;
             dtpNascimento.ShowCheckBox = true;
+            dtpNascimento.Checked = false;
 
             Controls.Add(new Label
             {
@@ -64,8 +71,10 @@ namespace MercadinhoDuZeh.Desktop
                 Location = new Point(20, 145),
                 AutoSize = true
             });
+
             txtEmail.Location = new Point(140, 142);
             txtEmail.Width = 220;
+            txtEmail.MaxLength = 50;
 
             var btnSalvar = new Button
             {
@@ -97,8 +106,8 @@ namespace MercadinhoDuZeh.Desktop
             {
                 txtNome.Text = cliente.nome;
                 txtCpf.Text = cliente.cpf;
-                txtEmail.Text = cliente.email;
-                dtpNascimento.Value = cliente.DataNascimento;
+                txtEmail.Text = cliente.email ?? string.Empty;
+                dtpNascimento.Value = cliente.DataNascimento.Date;
                 dtpNascimento.Checked = true;
             }
         }
@@ -115,7 +124,9 @@ namespace MercadinhoDuZeh.Desktop
 
             cliente.nome = txtNome.Text.Trim();
             cliente.cpf = txtCpf.Text.Trim();
-            cliente.email = txtEmail.Text.Trim();
+            cliente.email = string.IsNullOrWhiteSpace(txtEmail.Text)
+                ? null
+                : txtEmail.Text.Trim();
             cliente.DataNascimento = dtpNascimento.Value.Date;
 
             try

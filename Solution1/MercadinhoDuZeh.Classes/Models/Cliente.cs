@@ -12,19 +12,25 @@ namespace MercadinhoDuZeh.Classes.Models
 
         [Required]
         [StringLength(50, MinimumLength = 6)]
-        [RegularExpression("^[a-zA-Z ]+$")]
+        [RegularExpression(@"^[\p{L}\p{M}]+([ '\-][\p{L}\p{M}]+)*$",ErrorMessage = "Informe um nome válido.")]
         public string nome { get; set; }
 
         private string _cpf = string.Empty;
 
+        [Required]
+        [StringLength(11, MinimumLength = 11, ErrorMessage = "O CPF deve ter 11 dígitos.")]
+        [RegularExpression(@"^\d{11}$", ErrorMessage = "O CPF deve conter apenas números.")]
         public string cpf
         {
             get => _cpf;
-            set => _cpf = value.Replace(".", "").Replace("-", "");
+            set => _cpf = new string(
+                (value ?? string.Empty)
+                    .Where(char.IsDigit)
+                    .ToArray());
         }
 
         [EmailAddress]
-        public string email { get; set; }
+        public string? email { get; set; }
 
         public DateTime DataNascimento { get; set; }
 

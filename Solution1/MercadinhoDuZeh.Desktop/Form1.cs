@@ -1,6 +1,7 @@
 using MercadinhoDuZeh.Classes.Services;
 using System;
 using System.Drawing;
+using System.Globalization;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -13,6 +14,12 @@ namespace MercadinhoDuZeh.Desktop
 
         private readonly TextBox txtBusca = new TextBox();
         private readonly DataGridView gridClientes = new DataGridView();
+        private readonly Button btnAnterior = new Button();
+        private readonly Button btnProxima = new Button();
+        private readonly Label lblPagina = new Label();
+
+        private int paginaAtual = 1;
+        private const int TamanhoPagina = 10;
 
         public Form1(
             ClienteService clienteService,
@@ -36,6 +43,14 @@ namespace MercadinhoDuZeh.Desktop
 
             txtBusca.Location = new Point(20, 55);
             txtBusca.Size = new Size(230, 25);
+            txtBusca.KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    e.SuppressKeyPress = true;
+                    PesquisarClientes();
+                }
+            };
 
             var btnPesquisar = new Button
             {
@@ -43,7 +58,7 @@ namespace MercadinhoDuZeh.Desktop
                 Location = new Point(260, 53),
                 Size = new Size(90, 28)
             };
-            btnPesquisar.Click += (s, e) => CarregarClientes(txtBusca.Text);
+            btnPesquisar.Click += (s, e) => PesquisarClientes();
 
             var btnNovo = new Button
             {
@@ -79,7 +94,7 @@ namespace MercadinhoDuZeh.Desktop
 
                 if (formulario.ShowDialog(this) == DialogResult.OK)
                 {
-                    CarregarClientes(txtBusca.Text);
+                    CarregarClientes();
                 }
             };
 
@@ -87,18 +102,19 @@ namespace MercadinhoDuZeh.Desktop
             btnExcluir.Click += (s, e) => ExcluirCliente();
             btnDividas.Click += (s, e) => AbrirDividas();
 
-            gridClientes.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            gridClientes.SelectionMode =
+                DataGridViewSelectionMode.FullRowSelect;
             gridClientes.MultiSelect = false;
             gridClientes.Location = new Point(20, 100);
-            gridClientes.Size = new Size(860, 370);
-            gridClientes.Anchor = AnchorStyles.Top | AnchorStyles.Bottom |
-                                  AnchorStyles.Left | AnchorStyles.Right;
+            gridClientes.Size = new Size(860, 320);
+            gridClientes.Anchor =
+                AnchorStyles.Top | AnchorStyles.Bottom |
+                AnchorStyles.Left | AnchorStyles.Right;
             gridClientes.ReadOnly = true;
             gridClientes.AllowUserToAddRows = false;
             gridClientes.RowHeadersVisible = false;
             gridClientes.AutoSizeColumnsMode =
                 DataGridViewAutoSizeColumnsMode.Fill;
-
 
             gridClientes.Columns.Add("Id", "Id");
             gridClientes.Columns["Id"].Visible = false;
@@ -107,6 +123,36 @@ namespace MercadinhoDuZeh.Desktop
             gridClientes.Columns.Add("CPF", "CPF");
             gridClientes.Columns.Add("Idade", "Idade");
             gridClientes.Columns.Add("Total", "Total em aberto");
+            gridClientes.Columns["Total"].DefaultCellStyle.Alignment =
+                DataGridViewContentAlignment.MiddleRight;
+
+            btnAnterior.Text = "Anterior";
+            btnAnterior.Location = new Point(330, 435);
+            btnAnterior.Size = new Size(85, 28);
+            btnAnterior.Anchor = AnchorStyles.Bottom;
+            btnAnterior.Click += (s, e) =>
+            {
+                if (paginaAtual > 1)
+                {
+                    paginaAtual--;
+                    CarregarClientes();
+                }
+            };
+
+            lblPagina.Location = new Point(430, 441);
+            lblPagina.Size = new Size(100, 20);
+            lblPagina.TextAlign = ContentAlignment.MiddleCenter;
+            lblPagina.Anchor = AnchorStyles.Bottom;
+
+            btnProxima.Text = "Próxima";
+            btnProxima.Location = new Point(545, 435);
+            btnProxima.Size = new Size(85, 28);
+            btnProxima.Anchor = AnchorStyles.Bottom;
+            btnProxima.Click += (s, e) =>
+            {
+                paginaAtual++;
+                CarregarClientes();
+            };
 
             Controls.Add(lblTitulo);
             Controls.Add(txtBusca);
@@ -116,39 +162,75 @@ namespace MercadinhoDuZeh.Desktop
             Controls.Add(btnExcluir);
             Controls.Add(btnDividas);
             Controls.Add(gridClientes);
+            Controls.Add(btnAnterior);
+            Controls.Add(lblPagina);
+            Controls.Add(btnProxima);
 
             CarregarClientes();
         }
 
-        private void CarregarClientes(string pesquisa = "")
+        private void PesquisarClientes()
+        {
+            paginaAtual = 1;
+            CarregarClientes();
+        }
+
+        private void CarregarClientes()
         {
             gridClientes.Rows.Clear();
 
+            var pesquisa = txtBusca.Text.Trim();
             var clientes = clienteService.Consultar();
 
-            if (!string.IsNullOrWhiteSpace(pesquisa))
-            {
-                clientes = clientes
-                    .Where(cliente => cliente.nome.Contains(
+            var clientesOrdenados = clientes
+                .Where(cliente =>
+                    string.IsNullOrWhiteSpace(pesquisa) ||
+                    cliente.nome.Contains(
                         pesquisa,
                         StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
+                .Select(cliente => new
+                {
+                    Cliente = cliente,
+                    TotalEmAberto = dividasService
+                        .Consultar(cliente.id)
+                        .Where(divida => !divida.Paga)
+                        .Sum(divida => divida.Valor)
+                })
+                .OrderByDescending(item => item.TotalEmAberto)
+                .ThenBy(
+                    item => item.Cliente.nome,
+                    StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
-            foreach (var cliente in clientes)
+            int totalPaginas = Math.Max(
+                1,
+                (int)Math.Ceiling(
+                    clientesOrdenados.Count / (double)TamanhoPagina));
+
+            if (paginaAtual > totalPaginas)
             {
-                var totalEmAberto = dividasService
-                    .Consultar(cliente.id)
-                    .Where(divida => !divida.Paga)
-                    .Sum(divida => divida.Valor);
-
-                gridClientes.Rows.Add(
-                    cliente.id,
-                    cliente.nome,
-                    cliente.cpf,
-                    cliente.Idade,
-                    totalEmAberto.ToString("C"));
+                paginaAtual = totalPaginas;
             }
+
+            var clientesDaPagina = clientesOrdenados
+                .Skip((paginaAtual - 1) * TamanhoPagina)
+                .Take(TamanhoPagina);
+
+            var cultura = CultureInfo.GetCultureInfo("pt-BR");
+
+            foreach (var item in clientesDaPagina)
+            {
+                gridClientes.Rows.Add(
+                    item.Cliente.id,
+                    item.Cliente.nome,
+                    item.Cliente.cpf,
+                    item.Cliente.Idade,
+                    item.TotalEmAberto.ToString("C2", cultura));
+            }
+
+            lblPagina.Text = $"Página {paginaAtual} de {totalPaginas}";
+            btnAnterior.Enabled = paginaAtual > 1;
+            btnProxima.Enabled = paginaAtual < totalPaginas;
         }
 
         private int? ObterIdSelecionado()
@@ -186,7 +268,7 @@ namespace MercadinhoDuZeh.Desktop
 
             if (formulario.ShowDialog(this) == DialogResult.OK)
             {
-                CarregarClientes(txtBusca.Text);
+                CarregarClientes();
             }
         }
 
@@ -214,7 +296,7 @@ namespace MercadinhoDuZeh.Desktop
             {
                 if (clienteService.Excluir(id.Value))
                 {
-                    CarregarClientes(txtBusca.Text);
+                    CarregarClientes();
                 }
                 else
                 {
@@ -251,7 +333,7 @@ namespace MercadinhoDuZeh.Desktop
             using var formulario = new DividasForm(dividasService, cliente);
             formulario.ShowDialog(this);
 
-            CarregarClientes(txtBusca.Text);
+            CarregarClientes();
         }
     }
 }

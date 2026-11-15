@@ -30,6 +30,7 @@ namespace MercadinhoDuZeh.Classes.Models
         }
 
         [EmailAddress]
+        [StringLength(50)]
         public string? email { get; set; }
 
         public DateTime DataNascimento { get; set; }

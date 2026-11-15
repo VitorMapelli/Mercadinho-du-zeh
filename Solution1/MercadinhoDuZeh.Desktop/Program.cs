@@ -1,53 +1,40 @@
 using MercadinhoDuZeh.Classes.Context;
-using MercadinhoDuZeh.Classes.Models;
 using MercadinhoDuZeh.Classes.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Windows.Forms;
+
 namespace MercadinhoDuZeh.Desktop
 {
     internal static class Program
     {
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new Form1());
+
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.Development.json", optional: false)
+                .Build();
+
             var connectionString =
-            "(connection string do db)";
+                configuration.GetConnectionString("Postgres")
+                ?? throw new InvalidOperationException(
+                    "Connection string Postgres não encontrada.");
 
-                    var options = new DbContextOptionsBuilder<MercadinhoDbContext>()
-                        .UseNpgsql(connectionString)
-                        .Options;
+            var options = new DbContextOptionsBuilder<MercadinhoDbContext>()
+                .UseNpgsql(connectionString)
+                .Options;
 
-                    try
-                    {
-                        using var context = new MercadinhoDbContext(options);
+            using var context = new MercadinhoDbContext(options);
 
-                        var clienteService = new ClienteService(context);
-                        var clientes = clienteService.Consultar();
+            var clienteService = new ClienteService(context);
+            var dividasService = new DividasService(context);
 
-                        var resultado = string.Join(
-                            Environment.NewLine,
-                            clientes.Select(cliente =>
-                                $"{cliente.id} | {cliente.nome} | {cliente.cpf} | {cliente.email}")
-                        );
-
-                        MessageBox.Show(
-                            string.IsNullOrEmpty(resultado) ? "Nenhum cliente cadastrado." : resultado
-                        );
-
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Erro ao salvar: {ex.GetBaseException().Message}");
-                        return;
-                    }
-
-                    // Application.Run(new Form1());
+            Application.Run(
+                new Form1(clienteService, dividasService));
         }
     }
 }

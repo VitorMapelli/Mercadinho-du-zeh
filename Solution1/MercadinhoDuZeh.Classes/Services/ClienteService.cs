@@ -43,5 +43,43 @@ namespace MercadinhoDuZeh.Classes.Services
             return Validator.TryValidateObject(
                 cliente, validationContext, erros, true);
         }
+
+        public bool Atualizar(Cliente cliente, out List<ValidationResult> erros)
+        {
+            if (!Validar(cliente, out erros))
+            {
+                return false;
+            }
+
+            var clienteExistente = context.Clientes.Find(cliente.id);
+
+            if (clienteExistente == null)
+            {
+                erros.Add(new ValidationResult("Cliente não encontrado."));
+                return false;
+            }
+
+            clienteExistente.nome = cliente.nome;
+            clienteExistente.cpf = cliente.cpf;
+            clienteExistente.email = cliente.email;
+            clienteExistente.DataNascimento = cliente.DataNascimento;
+
+            context.SaveChanges();
+            return true;
+        }
+
+        public bool Excluir(int id)
+        {
+            var cliente = context.Clientes.Find(id);
+
+            if (cliente == null)
+            {
+                return false;
+            }
+
+            context.Clientes.Remove(cliente);
+            context.SaveChanges();
+            return true;
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using MercadinhoDuZeh.Classes.Models;
 using MercadinhoDuZeh.Classes.Services;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -10,17 +11,21 @@ namespace MercadinhoDuZeh.Desktop
     public partial class ClienteForm : Form
     {
         private readonly ClienteService clienteService;
+        private readonly Cliente? clienteOriginal;
 
         private readonly TextBox txtNome = new TextBox();
         private readonly TextBox txtCpf = new TextBox();
         private readonly TextBox txtEmail = new TextBox();
         private readonly DateTimePicker dtpNascimento = new DateTimePicker();
 
-        public ClienteForm(ClienteService clienteService)
+        public ClienteForm(
+            ClienteService clienteService,
+            Cliente? cliente = null)
         {
             this.clienteService = clienteService;
+            clienteOriginal = cliente;
 
-            Text = "Novo cliente";
+            Text = cliente == null ? "Novo cliente" : "Editar cliente";
             StartPosition = FormStartPosition.CenterParent;
             ClientSize = new Size(400, 260);
 
@@ -52,7 +57,6 @@ namespace MercadinhoDuZeh.Desktop
             dtpNascimento.Width = 220;
             dtpNascimento.MaxDate = DateTime.Today;
             dtpNascimento.ShowCheckBox = true;
-            dtpNascimento.Checked = false;
 
             Controls.Add(new Label
             {
@@ -88,9 +92,18 @@ namespace MercadinhoDuZeh.Desktop
 
             AcceptButton = btnSalvar;
             CancelButton = btnCancelar;
+
+            if (cliente != null)
+            {
+                txtNome.Text = cliente.nome;
+                txtCpf.Text = cliente.cpf;
+                txtEmail.Text = cliente.email;
+                dtpNascimento.Value = cliente.DataNascimento;
+                dtpNascimento.Checked = true;
+            }
         }
 
-        private void SalvarCliente(object sender, EventArgs e)
+        private void SalvarCliente(object? sender, EventArgs e)
         {
             if (!dtpNascimento.Checked)
             {
@@ -98,23 +111,33 @@ namespace MercadinhoDuZeh.Desktop
                 return;
             }
 
-            var cliente = new Cliente
-            {
-                nome = txtNome.Text.Trim(),
-                cpf = txtCpf.Text.Trim(),
-                email = txtEmail.Text.Trim(),
-                DataNascimento = dtpNascimento.Value.Date
-            };
+            var cliente = clienteOriginal ?? new Cliente();
+
+            cliente.nome = txtNome.Text.Trim();
+            cliente.cpf = txtCpf.Text.Trim();
+            cliente.email = txtEmail.Text.Trim();
+            cliente.DataNascimento = dtpNascimento.Value.Date;
 
             try
             {
-                if (!clienteService.Criar(cliente, out var erros))
-                {
-                    var mensagem = string.Join(
-                        Environment.NewLine,
-                        erros.Select(erro => erro.ErrorMessage));
+                bool sucesso;
+                List<ValidationResult> erros;
 
-                    MessageBox.Show(mensagem);
+                if (clienteOriginal == null)
+                {
+                    sucesso = clienteService.Criar(cliente, out erros);
+                }
+                else
+                {
+                    sucesso = clienteService.Atualizar(cliente, out erros);
+                }
+
+                if (!sucesso)
+                {
+                    MessageBox.Show(string.Join(
+                        Environment.NewLine,
+                        erros.Select(erro => erro.ErrorMessage)));
+
                     return;
                 }
 
@@ -124,7 +147,7 @@ namespace MercadinhoDuZeh.Desktop
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    $"Não foi possível salvar o cliente: {ex.GetBaseException().Message}");
+                    $"Não foi possível salvar: {ex.GetBaseException().Message}");
             }
         }
     }

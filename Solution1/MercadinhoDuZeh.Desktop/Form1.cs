@@ -83,6 +83,11 @@ namespace MercadinhoDuZeh.Desktop
                 }
             };
 
+            btnEditar.Click += (s, e) => EditarCliente();
+            btnExcluir.Click += (s, e) => ExcluirCliente();
+
+            gridClientes.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            gridClientes.MultiSelect = false;
             gridClientes.Location = new Point(20, 100);
             gridClientes.Size = new Size(860, 370);
             gridClientes.Anchor = AnchorStyles.Top | AnchorStyles.Bottom |
@@ -92,6 +97,10 @@ namespace MercadinhoDuZeh.Desktop
             gridClientes.RowHeadersVisible = false;
             gridClientes.AutoSizeColumnsMode =
                 DataGridViewAutoSizeColumnsMode.Fill;
+
+
+            gridClientes.Columns.Add("Id", "Id");
+            gridClientes.Columns["Id"].Visible = false;
 
             gridClientes.Columns.Add("Nome", "Nome");
             gridClientes.Columns.Add("CPF", "CPF");
@@ -133,10 +142,89 @@ namespace MercadinhoDuZeh.Desktop
                     .Sum(divida => divida.Valor);
 
                 gridClientes.Rows.Add(
+                    cliente.id,
                     cliente.nome,
                     cliente.cpf,
                     cliente.Idade,
                     totalEmAberto.ToString("C"));
+            }
+        }
+
+        private int? ObterIdSelecionado()
+        {
+            if (gridClientes.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Selecione um cliente na tabela.");
+                return null;
+            }
+
+            return Convert.ToInt32(
+                gridClientes.SelectedRows[0].Cells["Id"].Value);
+        }
+
+        private void EditarCliente()
+        {
+            var id = ObterIdSelecionado();
+
+            if (id == null)
+            {
+                return;
+            }
+
+            var cliente = clienteService
+                .Consultar()
+                .FirstOrDefault(c => c.id == id.Value);
+
+            if (cliente == null)
+            {
+                MessageBox.Show("Cliente não encontrado.");
+                return;
+            }
+
+            using var formulario = new ClienteForm(clienteService, cliente);
+
+            if (formulario.ShowDialog(this) == DialogResult.OK)
+            {
+                CarregarClientes(txtBusca.Text);
+            }
+        }
+
+        private void ExcluirCliente()
+        {
+            var id = ObterIdSelecionado();
+
+            if (id == null)
+            {
+                return;
+            }
+
+            var confirmacao = MessageBox.Show(
+                "Deseja excluir este cliente?",
+                "Confirmar exclusão",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirmacao != DialogResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                if (clienteService.Excluir(id.Value))
+                {
+                    CarregarClientes(txtBusca.Text);
+                }
+                else
+                {
+                    MessageBox.Show("Cliente não encontrado.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Não foi possível excluir. O cliente pode ter dívidas vinculadas.\n\n" +
+                    ex.GetBaseException().Message);
             }
         }
     }
